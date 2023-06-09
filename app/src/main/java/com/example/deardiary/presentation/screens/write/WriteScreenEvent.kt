@@ -7,6 +7,7 @@ import java.time.LocalTime
 sealed interface WriteScreenEvent {
     object OnSaveClick : WriteScreenEvent
     object ResetDate : WriteScreenEvent
+    object OnDelete : WriteScreenEvent
     data class OnForeGround(val diaryId: String) : WriteScreenEvent
     data class OnTitleChanged(val title: String) : WriteScreenEvent
     data class OnDescriptionChanged(val description: String) : WriteScreenEvent

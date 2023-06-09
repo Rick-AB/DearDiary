@@ -1,5 +1,6 @@
 package com.example.deardiary.presentation.screens.write
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -42,6 +43,7 @@ class WriteViewModel @Inject constructor(
             is WriteScreenEvent.OnTimeChanged -> updateTime(event.localTime)
             WriteScreenEvent.ResetDate -> resetDate()
             WriteScreenEvent.OnSaveClick -> saveDiary()
+            WriteScreenEvent.OnDelete -> deleteDiary()
         }
     }
 
@@ -57,12 +59,23 @@ class WriteViewModel @Inject constructor(
                 date = uiState.date
             }
 
-            when (val result = MongoRepo.upsertDiary(diary)) {
-                is RequestState.Error ->
-                    sideEffectChannel.send(WriteScreenSideEffect.SaveFailure(result.error.message.toString()))
+            val result = MongoRepo.upsertDiary(diary)
+            if (result is RequestState.Success) {
+                sideEffectChannel.send(WriteScreenSideEffect.SaveSuccess)
+            } else if (result is RequestState.Error) {
+                sideEffectChannel.send(WriteScreenSideEffect.SaveFailure(result.error.message.toString()))
+            }
+        }
+    }
 
-                is RequestState.Success -> sideEffectChannel.send(WriteScreenSideEffect.SaveSuccess)
-                else -> {}
+    private fun deleteDiary() {
+        viewModelScope.launch {
+            val result = MongoRepo.deleteDiary(ObjectId.invoke(uiState.diaryId!!))
+            Log.d("TAG", "deleteDiary: $result")
+            if (result is RequestState.Success) {
+                sideEffectChannel.send(WriteScreenSideEffect.DeleteSuccess)
+            } else if (result is RequestState.Error) {
+                sideEffectChannel.send(WriteScreenSideEffect.DeleteFailure(result.error.message.toString()))
             }
         }
     }

@@ -1,5 +1,6 @@
 @file:OptIn(
-    ExperimentalMaterial3Api::class, ExperimentalPagerApi::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalPagerApi::class,
     ExperimentalPagerApi::class
 )
 
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -41,11 +44,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -70,6 +76,7 @@ import com.maxkeppeler.sheets.clock.ClockDialog
 import com.maxkeppeler.sheets.clock.models.ClockSelection
 import com.stevdzasan.messagebar.ContentWithMessageBar
 import com.stevdzasan.messagebar.MessageBarState
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -89,6 +96,7 @@ fun WriteScreen(
     onTimeSelected: (LocalTime) -> Unit,
     onCloseIconClick: () -> Unit,
     onSaveClick: () -> Unit,
+    onDeleteConfirmed: () -> Unit,
     navigateUp: () -> Unit
 ) {
     LaunchedEffect(key1 = writeScreenState.mood) {
@@ -106,6 +114,7 @@ fun WriteScreen(
                 onDateSelected = onDateSelected,
                 onTimeSelected = onTimeSelected,
                 onCloseIconClick = onCloseIconClick,
+                onDeleteConfirmed = onDeleteConfirmed,
                 onNavClick = navigateUp
             )
         }
@@ -113,7 +122,10 @@ fun WriteScreen(
         ContentWithMessageBar(messageBarState = messageBarState) {
             Box(modifier = Modifier.padding(it)) {
                 WriteBody(
-                    modifier = Modifier.padding(top = 30.dp),
+                    modifier = Modifier
+                        .padding(top = 30.dp)
+                        .navigationBarsPadding()
+                        .imePadding(),
                     pagerState = pagerState,
                     title = writeScreenState.title,
                     description = writeScreenState.description,
@@ -137,8 +149,14 @@ fun WriteBody(
     onSaveClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     val allMoods = remember { Mood.values() }
+
+    LaunchedEffect(key1 = scrollState.maxValue) {
+        scrollState.scrollTo(scrollState.maxValue)
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
         Column(
@@ -173,7 +191,12 @@ fun WriteBody(
                 singleLine = true,
                 maxLines = 1,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = {})
+                keyboardActions = KeyboardActions(onNext = {
+                    scope.launch {
+                        scrollState.animateScrollTo(Int.MAX_VALUE)
+                        focusManager.moveFocus(FocusDirection.Down)
+                    }
+                })
             )
 
             TextField(
@@ -189,7 +212,6 @@ fun WriteBody(
                 ),
                 placeholder = { Text(text = stringResource(id = R.string.tell_me_about_it)) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onNext = {})
             )
         }
 
@@ -224,6 +246,7 @@ fun WriteTopAppBar(
     onDateSelected: (LocalDate) -> Unit,
     onTimeSelected: (LocalTime) -> Unit,
     onCloseIconClick: () -> Unit,
+    onDeleteConfirmed: () -> Unit,
     onNavClick: () -> Unit
 ) {
     val dateDialogState = rememberSheetState()
@@ -274,7 +297,7 @@ fun WriteTopAppBar(
             }
 
             if (diaryId != null) {
-                OverFlowMenu(diaryId = diaryId, diaryTitle = diaryTitle, onDeleteConfirmed = {})
+                OverFlowMenu(diaryTitle = diaryTitle, onDeleteConfirmed = onDeleteConfirmed)
             }
         }
     )
@@ -298,7 +321,6 @@ fun WriteTopAppBar(
 
 @Composable
 fun OverFlowMenu(
-    diaryId: String,
     diaryTitle: String,
     onDeleteConfirmed: () -> Unit
 ) {

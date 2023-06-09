@@ -104,6 +104,30 @@ object MongoRepo : MongoRepository {
             }
         }
     }
+
+    override suspend fun deleteDiary(diaryId: ObjectId): RequestState<Diary> {
+        return withContext(Dispatchers.IO) {
+            if (user == null) {
+                RequestState.Error(UserNotAuthenticatedException())
+            } else {
+                realm.write {
+                    val diary = query<Diary>("_id == $0 AND ownerId == $1", diaryId, user.id)
+                        .first().find()
+
+                    if (diary != null) {
+                        try {
+                            delete(diary)
+                            RequestState.Success(diary)
+                        } catch (e: Exception) {
+                            RequestState.Error(e)
+                        }
+                    } else {
+                        RequestState.Error(Exception("Diary does not exist."))
+                    }
+                }
+            }
+        }
+    }
 }
 
 

@@ -141,14 +141,15 @@ private fun NavGraphBuilder.write(navigateUp: () -> Unit) {
         val messageBarState = rememberMessageBarState()
         val viewModel: WriteViewModel = hiltViewModel()
         val allMoods = remember { Mood.values() }
-        val moodName = remember(pagerState.currentPage) { allMoods[pagerState.currentPage].name }
+        val moodName =
+            remember(pagerState.currentPage) { allMoods[pagerState.currentPage].name.uppercase() }
 
         viewModel.sideEffect.observeWithLifecycle {
             when (it) {
-                is WriteScreenSideEffect.SaveFailure ->
-                    messageBarState.addError(Exception(it.message))
-
+                is WriteScreenSideEffect.SaveFailure -> messageBarState.addError(Exception(it.message))
+                is WriteScreenSideEffect.DeleteFailure -> messageBarState.addError(Exception(it.message))
                 WriteScreenSideEffect.SaveSuccess -> navigateUp()
+                WriteScreenSideEffect.DeleteSuccess -> navigateUp()
             }
         }
 
@@ -172,6 +173,7 @@ private fun NavGraphBuilder.write(navigateUp: () -> Unit) {
                 viewModel.onEvent(WriteScreenEvent.OnMoodChanged(allMoods[pagerState.currentPage]))
                 viewModel.onEvent(WriteScreenEvent.OnSaveClick)
             },
+            onDeleteConfirmed = { viewModel.onEvent(WriteScreenEvent.OnDelete) },
             navigateUp = navigateUp
         )
     }
