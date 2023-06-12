@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.deardiary.R
 import com.example.deardiary.util.Constants.APP_ID
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.realm.kotlin.mongodb.App
 import io.realm.kotlin.mongodb.Credentials
@@ -14,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -30,28 +33,38 @@ class AuthViewModel @Inject constructor(
 
     fun onEvent(event: AuthScreenEvent) {
         when (event) {
-            is AuthScreenEvent.Login -> loginWithMongoAtlas(event.tokenId)
+            is AuthScreenEvent.Login -> loginWithFirebase(event.tokenId)
         }
     }
 
-    private fun loginWithMongoAtlas(tokenId: String) {
+
+    private fun loginWithFirebase(tokenId: String) {
         loadingState.value = true
         viewModelScope.launch {
+            val credential = GoogleAuthProvider.getCredential(tokenId, null)
             try {
-                val loginSuccess = withContext(Dispatchers.IO) {
-                    App.create(APP_ID).login(Credentials.jwt(tokenId)).loggedIn
-                }
-
-                if (loginSuccess)
-                    _sideEffect.send(AuthScreenSideEffect.LoginSuccess(getString(R.string.successfully_authenticated)))
-                else
-                    _sideEffect.send(AuthScreenSideEffect.LoginFailed(getString(R.string.something_went_wrong)))
-
+                FirebaseAuth.getInstance().signInWithCredential(credential).await()
+                loginWithMongoAtlas(tokenId)
             } catch (e: Exception) {
                 _sideEffect.send(AuthScreenSideEffect.Error(e))
             }
-
             loadingState.value = false
+        }
+    }
+
+    private suspend fun loginWithMongoAtlas(tokenId: String) {
+        try {
+            val loginSuccess = withContext(Dispatchers.IO) {
+                App.create(APP_ID).login(Credentials.jwt(tokenId)).loggedIn
+            }
+
+            if (loginSuccess)
+                _sideEffect.send(AuthScreenSideEffect.LoginSuccess(getString(R.string.successfully_authenticated)))
+            else
+                _sideEffect.send(AuthScreenSideEffect.LoginFailed(getString(R.string.something_went_wrong)))
+
+        } catch (e: Exception) {
+            _sideEffect.send(AuthScreenSideEffect.Error(e))
         }
     }
 

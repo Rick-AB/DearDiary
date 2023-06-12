@@ -11,5 +11,6 @@ data class WriteScreenState(
     val description: String = "",
     val mood: Mood = Mood.Neutral,
     val initialDate: RealmInstant? = null,
+    val images: List<String> = emptyList(),
     val date: RealmInstant = Instant.now().toRealmInstant()
 )

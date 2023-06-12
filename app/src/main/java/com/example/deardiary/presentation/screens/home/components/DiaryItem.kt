@@ -23,6 +23,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,9 +40,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.deardiary.R
 import com.example.deardiary.domain.model.Diary
+import com.example.deardiary.domain.model.GalleryImage
 import com.example.deardiary.domain.model.Mood
+import com.example.deardiary.domain.model.rememberGalleryState
 import com.example.deardiary.presentation.components.Gallery
 import com.example.deardiary.presentation.ui.theme.Elevation
+import com.example.deardiary.util.fetchImagesFromFirebase
 import com.example.deardiary.util.toInstant
 import java.time.Instant
 import java.time.ZoneId
@@ -51,8 +55,29 @@ import java.util.Locale
 @Composable
 fun DiaryHolder(diary: Diary, onClick: (String) -> Unit) {
     val localDensity = LocalDensity.current
+    val galleryState = rememberGalleryState()
     var lineHeight by remember { mutableStateOf(14.dp) }
-    var isGalleryOpen by remember { mutableStateOf(false) }
+    var galleryOpen by remember { mutableStateOf(false) }
+    var downloadingImages by remember { mutableStateOf(false) }
+
+    LaunchedEffect(key1 = galleryOpen, key2 = galleryState.images.size) {
+        if (galleryOpen && galleryState.images.isEmpty()) {
+            downloadingImages = true
+            fetchImagesFromFirebase(
+                imagesPath = diary.images,
+                onImageDownloaded = { imageUri, imagePath ->
+                    galleryState.addImage(
+                        GalleryImage(
+                            imageUri,
+                            imagePath
+                        )
+                    )
+                }
+            )
+        }
+
+        if (galleryState.images.size == diary.images.size) downloadingImages = false
+    }
 
     Row(
         modifier = Modifier.clickable(
@@ -86,14 +111,20 @@ fun DiaryHolder(diary: Diary, onClick: (String) -> Unit) {
                 )
 
                 if (diary.images.isNotEmpty()) {
+                    val text = when {
+                        !galleryOpen && !downloadingImages -> stringResource(id = R.string.show_gallery)
+                        galleryOpen && downloadingImages -> stringResource(id = R.string.loading)
+                        else -> stringResource(id = R.string.hide_gallery)
+                    }
+
                     ShowGalleryButton(
-                        isGalleryOpen = isGalleryOpen,
-                        onClick = { isGalleryOpen = !isGalleryOpen }
+                        text = text,
+                        onClick = { galleryOpen = !galleryOpen }
                     )
                 }
 
                 AnimatedVisibility(
-                    visible = isGalleryOpen,
+                    visible = galleryOpen && !downloadingImages,
                     enter = fadeIn() + expandVertically(
                         animationSpec = SpringSpec(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -102,7 +133,7 @@ fun DiaryHolder(diary: Diary, onClick: (String) -> Unit) {
                     )
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
-                        Gallery(images = diary.images)
+                        Gallery(state = galleryState)
                     }
                 }
             }
@@ -148,9 +179,8 @@ fun DiaryHeader(mood: Mood, time: Instant) {
 }
 
 @Composable
-fun ShowGalleryButton(isGalleryOpen: Boolean, onClick: () -> Unit) {
-    val text = if (isGalleryOpen) stringResource(id = R.string.hide_gallery)
-    else stringResource(id = R.string.show_gallery)
+fun ShowGalleryButton(text: String, onClick: () -> Unit) {
+
 
     TextButton(onClick = onClick) {
         Text(text = text, style = MaterialTheme.typography.bodySmall)

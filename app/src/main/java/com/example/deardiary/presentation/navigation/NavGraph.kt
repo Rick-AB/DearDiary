@@ -137,9 +137,11 @@ private fun NavGraphBuilder.home(navigateToWrite: (String?) -> Unit, navigateToA
 
 private fun NavGraphBuilder.write(navigateUp: () -> Unit) {
     composable<Destinations.Write> {
+        val viewModel: WriteViewModel = hiltViewModel()
         val pagerState = rememberPagerState()
         val messageBarState = rememberMessageBarState()
-        val viewModel: WriteViewModel = hiltViewModel()
+        val uiState = viewModel.uiState
+        val galleryState = viewModel.galleryState
         val allMoods = remember { Mood.values() }
         val moodName =
             remember(pagerState.currentPage) { allMoods[pagerState.currentPage].name.uppercase() }
@@ -160,15 +162,18 @@ private fun NavGraphBuilder.write(navigateUp: () -> Unit) {
         }
 
         WriteScreen(
-            writeScreenState = viewModel.uiState,
+            writeScreenState = uiState,
             pagerState = pagerState,
             messageBarState = messageBarState,
+            galleryState = galleryState,
             moodName = moodName,
             onTitleChanged = { viewModel.onEvent(WriteScreenEvent.OnTitleChanged(it)) },
             onDescriptionChanged = { viewModel.onEvent(WriteScreenEvent.OnDescriptionChanged(it)) },
             onDateSelected = { viewModel.onEvent(WriteScreenEvent.OnDateChanged(it)) },
             onTimeSelected = { viewModel.onEvent(WriteScreenEvent.OnTimeChanged(it)) },
             onCloseIconClick = { viewModel.onEvent((WriteScreenEvent.ResetDate)) },
+            onImagesSelected = { viewModel.onEvent(WriteScreenEvent.OnImagesSelected(it)) },
+            onRemoveImage = { viewModel.onEvent(WriteScreenEvent.OnRemoveImage(it)) },
             onSaveClick = {
                 viewModel.onEvent(WriteScreenEvent.OnMoodChanged(allMoods[pagerState.currentPage]))
                 viewModel.onEvent(WriteScreenEvent.OnSaveClick)
