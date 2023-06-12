@@ -5,6 +5,7 @@
 
 package com.example.deardiary.presentation.navigation
 
+import android.widget.Toast
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberDrawerState
@@ -15,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -29,6 +31,7 @@ import com.example.deardiary.presentation.screens.authentication.AuthScreenEvent
 import com.example.deardiary.presentation.screens.authentication.AuthScreenSideEffect
 import com.example.deardiary.presentation.screens.authentication.AuthViewModel
 import com.example.deardiary.presentation.screens.home.HomeScreen
+import com.example.deardiary.presentation.screens.home.HomeScreenDialogState
 import com.example.deardiary.presentation.screens.home.HomeScreenEvent
 import com.example.deardiary.presentation.screens.home.HomeScreenSideEffect
 import com.example.deardiary.presentation.screens.home.HomeViewModel
@@ -103,15 +106,20 @@ private fun NavGraphBuilder.authentication(navigateToHome: () -> Unit) {
 
 private fun NavGraphBuilder.home(navigateToWrite: (String?) -> Unit, navigateToAuth: () -> Unit) {
     composable<Destinations.Home> {
-        var signOutDialogOpen by remember { mutableStateOf(false) }
+        val context = LocalContext.current
+        val viewModel: HomeViewModel = hiltViewModel()
+        var dialogState by remember { mutableStateOf(HomeScreenDialogState.NONE) }
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val scope = rememberCoroutineScope()
-        val viewModel: HomeViewModel = hiltViewModel()
         val homeScreenState by viewModel.homeState.collectAsStateWithLifecycle()
 
         viewModel.sideEffect.observeWithLifecycle {
             when (it) {
                 HomeScreenSideEffect.SignedOut -> navigateToAuth()
+                HomeScreenSideEffect.DiariesDeleted -> scope.launch { drawerState.close() }
+                is HomeScreenSideEffect.Error -> {
+                    Toast.makeText(context, it.message, Toast.LENGTH_LONG).show()
+                }
             }
         }
 
@@ -119,18 +127,32 @@ private fun NavGraphBuilder.home(navigateToWrite: (String?) -> Unit, navigateToA
             homeScreenState = homeScreenState,
             drawerState = drawerState,
             signingOut = viewModel.signingOut.value,
-            onSignOutClick = { signOutDialogOpen = true },
+            deletingDiaries = viewModel.deletingDiaries.value,
+            onSignOutClick = { dialogState = HomeScreenDialogState.SIGN_OUT },
+            onDeleteAllClick = { dialogState = HomeScreenDialogState.DELETE_DIARIES },
             onMenuClick = { scope.launch { drawerState.open() } },
             navigateToWrite = navigateToWrite
         )
 
-        if (signOutDialogOpen) {
-            DisplayAlertDialog(
-                title = stringResource(id = R.string.sign_out),
-                message = stringResource(id = R.string.sign_out_prompt),
-                closeDialog = { signOutDialogOpen = false },
-                onPositiveButtonClick = { viewModel.onEvent(HomeScreenEvent.SignOut) }
-            )
+        when (dialogState) {
+            HomeScreenDialogState.NONE -> {}
+            HomeScreenDialogState.SIGN_OUT -> {
+                DisplayAlertDialog(
+                    title = stringResource(id = R.string.sign_out),
+                    message = stringResource(id = R.string.sign_out_prompt),
+                    closeDialog = { dialogState = HomeScreenDialogState.NONE },
+                    onPositiveButtonClick = { viewModel.onEvent(HomeScreenEvent.SignOut) }
+                )
+            }
+
+            HomeScreenDialogState.DELETE_DIARIES -> {
+                DisplayAlertDialog(
+                    title = stringResource(id = R.string.delete_all_diaries),
+                    message = stringResource(id = R.string.delete_all_diaries_prompt),
+                    closeDialog = { dialogState = HomeScreenDialogState.NONE },
+                    onPositiveButtonClick = { viewModel.onEvent(HomeScreenEvent.DeleteAllDiaries) }
+                )
+            }
         }
     }
 }

@@ -30,6 +30,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.CircularProgressIndicator
@@ -66,7 +67,9 @@ fun HomeScreen(
     homeScreenState: HomeScreenState,
     drawerState: DrawerState,
     signingOut: Boolean,
+    deletingDiaries: Boolean,
     onSignOutClick: () -> Unit,
+    onDeleteAllClick: () -> Unit,
     onMenuClick: () -> Unit,
     navigateToWrite: (String?) -> Unit
 ) {
@@ -74,7 +77,9 @@ fun HomeScreen(
     NavigationDrawer(
         drawerState = drawerState,
         signingOut = signingOut,
-        onSignOutClick = onSignOutClick
+        deletingDiaries = deletingDiaries,
+        onSignOutClick = onSignOutClick,
+        onDeleteAllClick = onDeleteAllClick
     ) {
         Scaffold(
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -166,7 +171,9 @@ fun HomeBody(
 fun NavigationDrawer(
     drawerState: DrawerState,
     signingOut: Boolean,
+    deletingDiaries: Boolean,
     onSignOutClick: () -> Unit,
+    onDeleteAllClick: () -> Unit,
     content: @Composable () -> Unit
 ) {
     ModalNavigationDrawer(
@@ -183,9 +190,10 @@ fun NavigationDrawer(
 
                 NavigationDrawerItem(
                     icon = {
-                        Image(
+                        Icon(
                             painter = painterResource(id = R.drawable.google_logo),
-                            contentDescription = "Google logo"
+                            contentDescription = "Google logo",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     },
                     label = {
@@ -205,6 +213,33 @@ fun NavigationDrawer(
                     },
                     selected = false,
                     onClick = onSignOutClick
+                )
+
+                NavigationDrawerItem(
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete all icon",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    label = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = stringResource(id = R.string.delete_all_diaries),
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            if (deletingDiaries) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 3.dp,
+                                )
+                            }
+                        }
+                    },
+                    selected = false,
+                    onClick = onDeleteAllClick
                 )
             }
         },

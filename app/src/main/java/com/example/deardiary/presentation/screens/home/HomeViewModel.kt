@@ -1,12 +1,22 @@
 package com.example.deardiary.presentation.screens.home
 
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.deardiary.DearDiaryApp
+import com.example.deardiary.R
+import com.example.deardiary.connectivity.ConnectivityObserver
+import com.example.deardiary.data.database.entity.ImageToDelete
 import com.example.deardiary.data.repository.MongoRepo
 import com.example.deardiary.domain.model.RequestState
 import com.example.deardiary.domain.repository.DiaryResult
+import com.example.deardiary.domain.repository.ImagesRepository
 import com.example.deardiary.util.Constants.APP_ID
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.realm.kotlin.mongodb.App
 import kotlinx.coroutines.channels.Channel
@@ -21,8 +31,16 @@ import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
-class HomeViewModel @Inject constructor() : ViewModel() {
+class HomeViewModel @Inject constructor(
+    private val connectivityObserver: ConnectivityObserver,
+    private val app: DearDiaryApp,
+    private val imagesRepository: ImagesRepository
+) : ViewModel() {
+
+    private var networkStatus by mutableStateOf(ConnectivityObserver.Status.Unavailable)
+
     val signingOut = mutableStateOf(false)
+    val deletingDiaries = mutableStateOf(false)
 
     val homeState: StateFlow<HomeScreenState> = MongoRepo.getDiaries().map {
         mapRequestStateToHomeState(it)
@@ -31,9 +49,14 @@ class HomeViewModel @Inject constructor() : ViewModel() {
     private val sideEffectChannel = Channel<HomeScreenSideEffect>()
     val sideEffect = sideEffectChannel.receiveAsFlow()
 
+    init {
+        observeNetworkStatus()
+    }
+
     fun onEvent(event: HomeScreenEvent) {
         when (event) {
             HomeScreenEvent.SignOut -> signOut()
+            HomeScreenEvent.DeleteAllDiaries -> deleteDiaries()
         }
     }
 
@@ -48,11 +71,66 @@ class HomeViewModel @Inject constructor() : ViewModel() {
         }
     }
 
+    private fun deleteDiaries() {
+        val firebaseUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        if (networkStatus == ConnectivityObserver.Status.Available) {
+            deletingDiaries.value = true
+            deleteImages(firebaseUserId)
+            app.applicationScope.launch {
+                val result = MongoRepo.deleteAllDiaries()
+                if (result is RequestState.Success) {
+                    sideEffectChannel.send(HomeScreenSideEffect.DiariesDeleted)
+                } else if (result is RequestState.Error) {
+                    sideEffectChannel.send(HomeScreenSideEffect.Error(result.error.message.toString()))
+                }
+
+                deletingDiaries.value = false
+            }
+        } else {
+            viewModelScope.launch {
+                val message =
+                    DearDiaryApp.appContext.getString(R.string.internet_connection_required)
+                sideEffectChannel.send(HomeScreenSideEffect.Error(message))
+            }
+        }
+    }
+
+    private fun deleteImages(firebaseUserId: String) {
+        val storage = FirebaseStorage.getInstance().reference
+        val imagesDirectory = "images/$firebaseUserId"
+
+        storage.child(imagesDirectory).listAll().addOnSuccessListener {
+            it.items.map { ref ->
+                val imagePath = "$imagesDirectory/${ref.name}"
+                deleteImage(storage, imagePath)
+            }
+        }.addOnFailureListener {
+            viewModelScope.launch { sideEffectChannel.send(HomeScreenSideEffect.Error(it.message.toString())) }
+        }
+    }
+
+    private fun deleteImage(storage: StorageReference, imagePath: String) {
+        storage.child(imagePath).delete().addOnFailureListener {
+            app.applicationScope.launch {
+                val imageToDelete = ImageToDelete(remotePath = imagePath)
+                imagesRepository.addImageToDelete(imageToDelete)
+            }
+        }
+    }
+
     private fun mapRequestStateToHomeState(requestState: DiaryResult): HomeScreenState {
         return when (requestState) {
-            is RequestState.Error -> HomeScreenState.Error(requestState.error.message ?: "")
+            is RequestState.Error -> HomeScreenState.Error(requestState.error.message.toString())
             is RequestState.Success -> HomeScreenState.DataLoaded(requestState.data)
             else -> HomeScreenState.Loading
+        }
+    }
+
+    private fun observeNetworkStatus() {
+        viewModelScope.launch {
+            connectivityObserver.observe().collect {
+                networkStatus = it
+            }
         }
     }
 }
