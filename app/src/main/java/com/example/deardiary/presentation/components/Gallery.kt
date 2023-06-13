@@ -15,7 +15,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CornerBasedShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
@@ -81,8 +84,13 @@ fun Gallery(
             if (editable) {
                 GalleryImageOverlay(
                     size = size,
-                    text = "+",
                     shape = shape,
+                    content = {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add icon"
+                        )
+                    },
                     onClick = {
                         onAddIconClick()
                         imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -109,7 +117,18 @@ fun Gallery(
             }
 
             if (remainingImages > 0) {
-                GalleryImageOverlay(size = size, text = "+$remainingImages", shape = shape)
+                GalleryImageOverlay(
+                    size = size,
+                    shape = shape,
+                    content = {
+                        Text(
+                            text = "+$remainingImages",
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        )
+                    })
             }
         }
     }
@@ -119,8 +138,8 @@ fun Gallery(
 @Composable
 fun GalleryImageOverlay(
     size: Dp,
-    text: String,
     shape: CornerBasedShape,
+    content: @Composable () -> Unit,
     onClick: (() -> Unit)? = null
 ) {
     Box(contentAlignment = Alignment.Center) {
@@ -133,12 +152,6 @@ fun GalleryImageOverlay(
             color = MaterialTheme.colorScheme.primaryContainer
         ) {}
 
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        )
+        content()
     }
 }

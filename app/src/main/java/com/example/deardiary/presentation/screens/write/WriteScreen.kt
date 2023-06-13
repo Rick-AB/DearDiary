@@ -5,6 +5,7 @@
 package com.example.deardiary.presentation.screens.write
 
 import android.net.Uri
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -94,6 +95,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 @Composable
@@ -304,7 +306,10 @@ fun WriteTopAppBar(
         DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a", Locale.getDefault())
             .withZone(ZoneId.systemDefault())
     }
-    val showCloseIcon = remember(date) { initialDate.compareTo(date) != 0 }
+    val showCloseIcon = remember(date) {
+        initialDate.truncatedTo(ChronoUnit.MINUTES)
+            .compareTo(date.truncatedTo(ChronoUnit.MINUTES)) != 0
+    }
 
     CenterAlignedTopAppBar(title = {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
