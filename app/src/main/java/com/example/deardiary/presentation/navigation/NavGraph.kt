@@ -128,9 +128,12 @@ private fun NavGraphBuilder.home(navigateToWrite: (String?) -> Unit, navigateToA
             drawerState = drawerState,
             signingOut = viewModel.signingOut.value,
             deletingDiaries = viewModel.deletingDiaries.value,
+            dateSelected = viewModel.dateFilterAsFlow.value != null,
             onSignOutClick = { dialogState = HomeScreenDialogState.SIGN_OUT },
             onDeleteAllClick = { dialogState = HomeScreenDialogState.DELETE_DIARIES },
             onMenuClick = { scope.launch { drawerState.open() } },
+            onDateSelected = { viewModel.onEvent(HomeScreenEvent.OnDateSelected(it)) },
+            onDateReset = { viewModel.onEvent(HomeScreenEvent.OnDateSelected(null)) },
             navigateToWrite = navigateToWrite
         )
 

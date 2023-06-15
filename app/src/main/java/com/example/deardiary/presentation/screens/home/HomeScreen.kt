@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -60,6 +61,9 @@ import com.example.deardiary.domain.model.Diary
 import com.example.deardiary.presentation.components.ClickableIcon
 import com.example.deardiary.presentation.screens.home.components.DateHeader
 import com.example.deardiary.presentation.screens.home.components.DiaryHolder
+import com.maxkeppeker.sheets.core.models.base.rememberSheetState
+import com.maxkeppeler.sheets.calendar.CalendarDialog
+import com.maxkeppeler.sheets.calendar.models.CalendarSelection
 import java.time.LocalDate
 
 @Composable
@@ -68,9 +72,12 @@ fun HomeScreen(
     drawerState: DrawerState,
     signingOut: Boolean,
     deletingDiaries: Boolean,
+    dateSelected: Boolean,
     onSignOutClick: () -> Unit,
     onDeleteAllClick: () -> Unit,
     onMenuClick: () -> Unit,
+    onDateSelected: (LocalDate) -> Unit,
+    onDateReset: () -> Unit,
     navigateToWrite: (String?) -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -83,7 +90,15 @@ fun HomeScreen(
     ) {
         Scaffold(
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            topBar = { HomeTopAppBar(scrollBehavior = scrollBehavior, onMenuClick = onMenuClick) },
+            topBar = {
+                HomeTopAppBar(
+                    scrollBehavior = scrollBehavior,
+                    dateSelected = dateSelected,
+                    onMenuClick = onMenuClick,
+                    onDateSelected = onDateSelected,
+                    onDateReset = onDateReset
+                )
+            },
             floatingActionButton = {
                 FloatingActionButton(onClick = { navigateToWrite(null) }) {
                     Icon(imageVector = Icons.Default.Edit, contentDescription = "New Diary")
@@ -248,7 +263,15 @@ fun NavigationDrawer(
 }
 
 @Composable
-fun HomeTopAppBar(scrollBehavior: TopAppBarScrollBehavior, onMenuClick: () -> Unit) {
+fun HomeTopAppBar(
+    scrollBehavior: TopAppBarScrollBehavior,
+    dateSelected: Boolean,
+    onMenuClick: () -> Unit,
+    onDateSelected: (LocalDate) -> Unit,
+    onDateReset: () -> Unit
+) {
+    val dateDialogState = rememberSheetState()
+
     TopAppBar(
         navigationIcon = {
             ClickableIcon(
@@ -259,14 +282,26 @@ fun HomeTopAppBar(scrollBehavior: TopAppBarScrollBehavior, onMenuClick: () -> Un
         },
         title = { Text(text = stringResource(id = R.string.diary)) },
         actions = {
-            ClickableIcon(
-                imageVector = Icons.Default.DateRange,
-                tint = MaterialTheme.colorScheme.onSurface,
-                onClick = {}
-            )
+            if (dateSelected) {
+                ClickableIcon(
+                    imageVector = Icons.Default.Close,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    onClick = onDateReset
+                )
+            } else {
+                ClickableIcon(
+                    imageVector = Icons.Default.DateRange,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    onClick = dateDialogState::show
+                )
+            }
         },
         scrollBehavior = scrollBehavior
     )
+
+    CalendarDialog(state = dateDialogState, selection = CalendarSelection.Date { date: LocalDate ->
+        onDateSelected(date)
+    })
 }
 
 

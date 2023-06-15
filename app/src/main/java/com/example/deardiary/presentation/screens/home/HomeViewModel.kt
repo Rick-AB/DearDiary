@@ -19,17 +19,26 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.realm.kotlin.mongodb.App
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val connectivityObserver: ConnectivityObserver,
@@ -41,10 +50,16 @@ class HomeViewModel @Inject constructor(
 
     val signingOut = mutableStateOf(false)
     val deletingDiaries = mutableStateOf(false)
+    val dateFilterAsFlow = MutableStateFlow<ZonedDateTime?>(null)
 
-    val homeState: StateFlow<HomeScreenState> = MongoRepo.getDiaries().map {
-        mapRequestStateToHomeState(it)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), HomeScreenState.Loading)
+    val homeState: StateFlow<HomeScreenState> = dateFilterAsFlow.flatMapLatest {
+        if (it == null) MongoRepo.getDiaries()
+        else MongoRepo.getFilteredDiaries(it)
+    }.map(::mapRequestStateToHomeState).stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000L),
+        HomeScreenState.Loading
+    )
 
     private val sideEffectChannel = Channel<HomeScreenSideEffect>()
     val sideEffect = sideEffectChannel.receiveAsFlow()
@@ -57,6 +72,7 @@ class HomeViewModel @Inject constructor(
         when (event) {
             HomeScreenEvent.SignOut -> signOut()
             HomeScreenEvent.DeleteAllDiaries -> deleteDiaries()
+            is HomeScreenEvent.OnDateSelected -> setDateFilter(event.localDate)
         }
     }
 
@@ -92,6 +108,15 @@ class HomeViewModel @Inject constructor(
                     DearDiaryApp.appContext.getString(R.string.internet_connection_required)
                 sideEffectChannel.send(HomeScreenSideEffect.Error(message))
             }
+        }
+    }
+
+    private fun setDateFilter(localDate: LocalDate?) {
+        if (localDate == null) dateFilterAsFlow.update { null }
+        else {
+            val zonedDateTime =
+                ZonedDateTime.of(localDate, LocalTime.MIDNIGHT, ZoneId.systemDefault())
+            dateFilterAsFlow.update { zonedDateTime }
         }
     }
 

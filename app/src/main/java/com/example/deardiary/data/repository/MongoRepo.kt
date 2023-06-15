@@ -13,13 +13,17 @@ import io.realm.kotlin.log.LogLevel
 import io.realm.kotlin.mongodb.App
 import io.realm.kotlin.mongodb.sync.SyncConfiguration
 import io.realm.kotlin.query.Sort
+import io.realm.kotlin.types.RealmInstant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import org.mongodb.kbson.ObjectId
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZonedDateTime
 
 object MongoRepo : MongoRepository {
     private val user = App.create(APP_ID).currentUser
@@ -67,7 +71,47 @@ object MongoRepo : MongoRepository {
                 flow { emit(RequestState.Error(e)) }
             }
         }
+    }
 
+    override fun getFilteredDiaries(zonedDateTime: ZonedDateTime): Flow<DiaryResult> {
+        return if (user == null) {
+            flow { emit(RequestState.Error(UserNotAuthenticatedException())) }
+        } else {
+            try {
+                val earliestDate = RealmInstant.from(
+                    LocalDateTime.of(
+                        zonedDateTime.toLocalDate().plusDays(1),
+                        LocalTime.MIDNIGHT
+                    ).toEpochSecond(zonedDateTime.offset), 0
+                )
+                val latestDate = RealmInstant.from(
+                    LocalDateTime.of(
+                        zonedDateTime.toLocalDate(),
+                        LocalTime.MIDNIGHT
+                    ).toEpochSecond(zonedDateTime.offset), 0
+                )
+                realm.query<Diary>(
+                    query = "ownerId == $0 AND date < $1 AND date > $2",
+                    user.id,
+                    earliestDate,
+                    latestDate
+                )
+                    .sort("date", Sort.DESCENDING)
+                    .asFlow()
+                    .map { res ->
+                        RequestState.Success(
+                            data = res.list.groupBy { diary ->
+                                diary.date.toInstant()
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
+                            }
+                        )
+
+                    }
+            } catch (e: Exception) {
+                flow { emit(RequestState.Error(e)) }
+            }
+        }
     }
 
     override suspend fun getDiary(diaryId: ObjectId): RequestState<Diary> {
