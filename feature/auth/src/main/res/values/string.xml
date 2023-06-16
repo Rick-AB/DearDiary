@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_title">Welcome Back</string>
+    <string name="auth_sub_title">Please sign in to continue</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="please_wait">Please wait</string>
+    <string name="successfully_authenticated">Successfully Authenticated</string>
+    <string name="something_went_wrong">Something went wrong</string>
+</resources>

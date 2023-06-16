@@ -1,0 +1,13 @@
+<resources>
+
+    <string name="something_went_wrong">Something went wrong</string>
+    <string name="diary">Diary</string>
+    <string name="an_error_occurred">An error occurred</string>
+    <string name="delete">Delete</string>
+    <string name="save">Save</string>
+    <string name="delete_all_diaries">Delete All Diaries</string>
+    <string name="title">Title</string>
+    <string name="tell_me_about_it">Tell me about it...</string>
+    <string name="delete_all_diaries_prompt">Are you sure you want to permanently delete all your diaries?</string>
+    <string name="internet_connection_required">Internet connection is required to perform this operation.</string>
+</resources>

@@ -2,10 +2,10 @@ package com.example.deardiary.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.data.repository.ImagesRepo
+import com.example.data.repository.ImagesRepository
 import com.example.deardiary.data.database.ImageDatabase
-import com.example.deardiary.data.repository.ImagesRepo
-import com.example.deardiary.domain.repository.ImagesRepository
-import com.example.deardiary.util.Constants.IMAGE_DB_NAME
+import com.example.util.Constants.IMAGE_DB_NAME
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

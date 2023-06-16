@@ -2,8 +2,8 @@ package com.example.deardiary.di
 
 import android.content.Context
 import com.example.deardiary.DearDiaryApp
-import com.example.deardiary.connectivity.ConnectivityObserver
-import com.example.deardiary.connectivity.NetworkConnectivityObserver
+import com.example.util.connectivity.ConnectivityObserver
+import com.example.util.connectivity.NetworkConnectivityObserver
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
