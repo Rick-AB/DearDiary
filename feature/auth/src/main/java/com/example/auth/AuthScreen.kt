@@ -42,7 +42,7 @@ import com.stevdzasan.onetap.OneTapSignInState
 import com.stevdzasan.onetap.OneTapSignInWithGoogle
 
 @Composable
-fun AuthScreen(
+internal fun AuthScreen(
     loading: Boolean,
     oneTapSignInState: OneTapSignInState,
     messageBarState: MessageBarState,
@@ -77,7 +77,7 @@ fun AuthScreen(
 }
 
 @Composable
-fun AuthBody(modifier: Modifier, loading: Boolean, onClick: () -> Unit) {
+internal fun AuthBody(modifier: Modifier, loading: Boolean, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
@@ -118,7 +118,7 @@ fun AuthBody(modifier: Modifier, loading: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun GoogleButton(
+internal fun GoogleButton(
     modifier: Modifier = Modifier,
     loading: Boolean = false,
     primaryText: String = stringResource(id = R.string.sign_in_with_google),

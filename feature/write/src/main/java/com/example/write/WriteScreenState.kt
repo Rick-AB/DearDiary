@@ -5,7 +5,7 @@ import com.example.util.toRealmInstant
 import io.realm.kotlin.types.RealmInstant
 import java.time.Instant
 
-data class WriteScreenState(
+internal data class WriteScreenState(
     val diaryId: String? = null,
     val title: String = "",
     val description: String = "",

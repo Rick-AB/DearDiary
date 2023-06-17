@@ -6,7 +6,7 @@ import com.example.util.model.Mood
 import java.time.LocalDate
 import java.time.LocalTime
 
-sealed interface WriteScreenEvent {
+internal sealed interface WriteScreenEvent {
     object OnSaveClick : WriteScreenEvent
     object ResetDate : WriteScreenEvent
     object OnDelete : WriteScreenEvent

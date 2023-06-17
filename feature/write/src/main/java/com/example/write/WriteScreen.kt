@@ -94,7 +94,7 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 @Composable
-fun WriteScreen(
+internal fun WriteScreen(
     writeScreenState: WriteScreenState,
     pagerState: PagerState,
     messageBarState: MessageBarState,
@@ -168,7 +168,7 @@ fun WriteScreen(
 }
 
 @Composable
-fun WriteBody(
+internal fun WriteBody(
     modifier: Modifier = Modifier,
     pagerState: PagerState,
     galleryState: GalleryState,
@@ -280,7 +280,7 @@ fun WriteBody(
 }
 
 @Composable
-fun WriteTopAppBar(
+internal fun WriteTopAppBar(
     diaryId: String?,
     diaryTitle: String,
     moodName: String,
@@ -354,7 +354,7 @@ fun WriteTopAppBar(
 }
 
 @Composable
-fun ZoomableImage(
+internal fun ZoomableImage(
     selectedGalleryImage: GalleryImage, onCloseClick: () -> Unit, onDeleteClick: () -> Unit
 ) {
     var offsetX by remember { mutableStateOf(0f) }
@@ -406,7 +406,7 @@ fun ZoomableImage(
 }
 
 @Composable
-fun OverFlowMenu(
+internal fun OverFlowMenu(
     diaryTitle: String, onDeleteConfirmed: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -437,7 +437,7 @@ fun OverFlowMenu(
 }
 
 @Composable
-fun MenuItem(
+internal fun MenuItem(
     @StringRes menuTextRes: Int,
     onDismiss: () -> Unit,
     onClick: () -> Unit,

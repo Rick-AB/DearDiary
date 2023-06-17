@@ -53,7 +53,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun DiaryHolder(diary: Diary, onClick: (String) -> Unit) {
+internal fun DiaryHolder(diary: Diary, onClick: (String) -> Unit) {
     val localDensity = LocalDensity.current
     val galleryState = rememberGalleryState()
     var lineHeight by remember { mutableStateOf(14.dp) }
@@ -142,7 +142,7 @@ fun DiaryHolder(diary: Diary, onClick: (String) -> Unit) {
 }
 
 @Composable
-fun DiaryHeader(mood: Mood, time: Instant) {
+internal fun DiaryHeader(mood: Mood, time: Instant) {
     val formatter = remember {
         DateTimeFormatter.ofPattern("hh:mm a", Locale.getDefault())
             .withZone(ZoneId.systemDefault())
@@ -179,7 +179,7 @@ fun DiaryHeader(mood: Mood, time: Instant) {
 }
 
 @Composable
-fun ShowGalleryButton(text: String, onClick: () -> Unit) {
+internal fun ShowGalleryButton(text: String, onClick: () -> Unit) {
 
 
     TextButton(onClick = onClick) {

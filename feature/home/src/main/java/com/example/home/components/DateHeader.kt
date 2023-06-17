@@ -16,7 +16,7 @@ import java.time.LocalDate
 
 
 @Composable
-fun DateHeader(localeDate: LocalDate, modifier: Modifier = Modifier) {
+internal fun DateHeader(localeDate: LocalDate, modifier: Modifier = Modifier) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier

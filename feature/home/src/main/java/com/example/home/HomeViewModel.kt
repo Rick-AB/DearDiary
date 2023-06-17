@@ -38,7 +38,7 @@ import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
-class HomeViewModel @Inject constructor(
+internal class HomeViewModel @Inject constructor(
     private val connectivityObserver: ConnectivityObserver,
     private val app: com.example.util.App,
     private val imagesRepository: ImagesRepository

@@ -66,7 +66,7 @@ import com.maxkeppeler.sheets.calendar.models.CalendarSelection
 import java.time.LocalDate
 
 @Composable
-fun HomeScreen(
+internal fun HomeScreen(
     homeScreenState: HomeScreenState,
     drawerState: DrawerState,
     signingOut: Boolean,
@@ -149,7 +149,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun HomeBody(
+internal fun HomeBody(
     modifier: Modifier = Modifier,
     items: Map<LocalDate, List<Diary>>,
     onClick: (String) -> Unit
@@ -182,7 +182,7 @@ fun HomeBody(
 }
 
 @Composable
-fun NavigationDrawer(
+internal fun NavigationDrawer(
     drawerState: DrawerState,
     signingOut: Boolean,
     deletingDiaries: Boolean,
@@ -262,7 +262,7 @@ fun NavigationDrawer(
 }
 
 @Composable
-fun HomeTopAppBar(
+internal fun HomeTopAppBar(
     scrollBehavior: TopAppBarScrollBehavior,
     dateSelected: Boolean,
     onMenuClick: () -> Unit,
@@ -305,7 +305,7 @@ fun HomeTopAppBar(
 
 
 @Composable
-fun EmptyPage(
+internal fun EmptyPage(
     modifier: Modifier = Modifier,
     title: String = "Empty Diary",
     subtitle: String = "Write Something"

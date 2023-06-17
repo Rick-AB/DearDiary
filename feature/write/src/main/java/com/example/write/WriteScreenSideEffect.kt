@@ -1,6 +1,6 @@
 package com.example.write
 
-sealed interface WriteScreenSideEffect {
+internal sealed interface WriteScreenSideEffect {
     object SaveSuccess : WriteScreenSideEffect
     data class SaveFailure(val message: String) : WriteScreenSideEffect
     object DeleteSuccess : WriteScreenSideEffect

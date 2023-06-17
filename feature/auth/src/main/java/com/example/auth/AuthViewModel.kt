@@ -20,7 +20,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
-class AuthViewModel @Inject constructor(
+internal class AuthViewModel @Inject constructor(
     private val application: Application
 ) : ViewModel() {
 
